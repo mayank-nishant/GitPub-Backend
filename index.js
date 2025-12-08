@@ -1,5 +1,12 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import dotenv from "dotenv";
+import cors from "cors";
+import mongoose from "mongoose";
+import express from "express";
+import http from "http";
+import bodyParser from "body-parser";
+import { Server } from "socket.io";
 
 import initRepo from "./controllers/init.js";
 import addRepo from "./controllers/add.js";
@@ -7,9 +14,11 @@ import commitRepo from "./controllers/commit.js";
 import pullRepo from "./controllers/pull.js";
 import pushRepo from "./controllers/push.js";
 import revertRepo from "./controllers/revert.js";
-import { argv } from "process";
+
+dotenv.config();
 
 yargs(hideBin(process.argv))
+  .command("start", "Starts a new server", {}, startServer)
   .command("init", "Initialize a new repository", {}, initRepo)
   .command(
     "add <file>",
@@ -54,3 +63,54 @@ yargs(hideBin(process.argv))
   )
   .demandCommand(1, "You need at least one command")
   .help().argv;
+
+async function startServer() {
+  const app = express();
+  const port = process.env.PORT || 3001;
+
+  app.use(bodyParser.json());
+  app.use(express.json());
+
+  const mongoURI = process.env.MONGODB_URI;
+
+  mongoose
+    .connect(mongoURI)
+    .then(() => console.log("MongoDB connected...!!!"))
+    .catch((err) => console.error("Unable to connect to MongoDB : ", err));
+
+  app.use(cors({ origin: "*" }));
+
+  app.get("/", (req, res) => {
+    res.send("Welcome...!!!");
+  });
+
+  const httpServer = http.createServer(app);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
+  });
+
+  let user = "test";
+  io.on("connection", (socket) => {
+    socket.on("joinRoom", (userID) => {
+      const user = userID;
+      console.log("=====");
+      console.log(user);
+      console.log("=====");
+      socket.join(userID);
+    });
+  });
+
+  const db = mongoose.connection;
+
+  db.once("open", async () => {
+    console.log("CRUD operations called");
+    // CRUD operations
+  });
+
+  httpServer.listen(port, () => {
+    console.log(`Server is running on PORT ${port}`);
+  });
+}
