@@ -37,8 +37,8 @@ yargs(hideBin(process.argv))
       commitRepo(argv.message);
     }
   )
-  .command("pull", "Initialize a new repository", {}, pullRepo)
-  .command("push", "Initialize a new repository", {}, pushRepo)
+  .command("pull", "Pull commits from S3", {}, pullRepo)
+  .command("push", "Push commits to S3", {}, pushRepo)
   .command(
     "revert <commitID>",
     "Revert to a specific commit",
@@ -48,7 +48,9 @@ yargs(hideBin(process.argv))
         type: "string",
       });
     },
-    revertRepo
+    (argv) => {
+      revertRepo(argv.commitID);
+    }
   )
   .demandCommand(1, "You need at least one command")
   .help().argv;
