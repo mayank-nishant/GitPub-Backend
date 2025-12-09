@@ -8,6 +8,8 @@ import http from "http";
 import bodyParser from "body-parser";
 import { Server } from "socket.io";
 
+import mainRouter from "./routes/mainRouter.js";
+
 import initRepo from "./controllers/init.js";
 import addRepo from "./controllers/add.js";
 import commitRepo from "./controllers/commit.js";
@@ -80,9 +82,7 @@ async function startServer() {
 
   app.use(cors({ origin: "*" }));
 
-  app.get("/", (req, res) => {
-    res.send("Welcome...!!!");
-  });
+  app.use("/", mainRouter);
 
   const httpServer = http.createServer(app);
   const io = new Server(httpServer, {
